@@ -13,17 +13,22 @@ def create_index(dir_path, index_dir):
     for root, _, files in os.walk(dir_path):
         for file in files:
             file_path = os.path.join(root, file)
-            if file_path.endswith('.txt'):  
+            if file_path.endswith('.txt'):  # Process text files
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 writer.add_document(content=content)
     writer.commit()
 
-def search_files(index_dir, search_query):
+def search_files(index_dir, search_query, file_type=None):
     ix = open_dir(index_dir)
     searcher = ix.searcher()
     query_parser = QueryParser("content", ix.schema)
     query = query_parser.parse(search_query)
+
+    # Apply the file type filter if provided
+    if file_type:
+        query = query_parser.parse(f"{search_query} AND {file_type}")
+
     results = searcher.search(query)
     return results
 
@@ -36,7 +41,12 @@ if __name__ == "__main__":
         search_query = input("Enter your search query (or 'q' to quit): ").strip()
         if search_query.lower() == 'q':
             break
-        results = search_files(index_directory, search_query)
+
+        file_type = input("Enter the file type (e.g., txt, c, py), or leave empty for all types: ").strip()
+        file_type = file_type.lower() if file_type else None
+
+        results = search_files(index_directory, search_query, file_type)
+
         print("Search results:")
         for result in results:
             print(result['content'])
